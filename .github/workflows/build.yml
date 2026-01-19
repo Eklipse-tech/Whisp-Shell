@@ -5,8 +5,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
       - name: Build with Buildozer Docker
         uses: ArtemSBulgakov/buildozer-action@v1
@@ -16,7 +16,7 @@ jobs:
           buildozer_version: stable
 
       - name: Upload APK
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
-          name: package
+          name: WhispShell
           path: bin/*.apk
