@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout Code
@@ -28,19 +28,23 @@ jobs:
             libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev zlib1g-dev \
             libsqlite3-dev sqlite3 libbz2-dev libssl-dev openssl \
             libgdbm-dev libgdbm-compat-dev liblzma-dev libreadline-dev \
-            libncursesw5-dev libffi-dev uuid-dev libtool automake autoconf openjdk-17-jdk
+            libncursesw5-dev libffi-dev uuid-dev libtool libtool-bin automake autoconf openjdk-17-jdk
 
       - name: Install Buildozer
         run: |
           pip3 install --upgrade pip
           pip3 install buildozer cython==0.29.36
 
-      - name: Initialize Buildozer (If missing)
+      - name: Initialize Buildozer
         run: |
+          # Create a fresh spec file if it doesn't exist
           if [ ! -f buildozer.spec ]; then
             buildozer init
+            # Patch requirements
             sed -i 's/requirements = python3,kivy/requirements = python3,kivy,requests,urllib3,charset-normalizer,idna,certifi,openssl/' buildozer.spec
+            # Patch permissions (The "God Mode" List)
             sed -i 's/#android.permissions = INTERNET/android.permissions = INTERNET,ACCESS_NETWORK_STATE,VIBRATE,WAKE_LOCK,READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE,MANAGE_EXTERNAL_STORAGE,CAMERA,RECORD_AUDIO,MODIFY_AUDIO_SETTINGS,ACCESS_COARSE_LOCATION,ACCESS_FINE_LOCATION,READ_CONTACTS/' buildozer.spec
+            # Patch API versions
             sed -i 's/#android.uses_cleartext_traffic = 1/android.uses_cleartext_traffic = 1/' buildozer.spec
             sed -i 's/android.api = 27/android.api = 33/' buildozer.spec
             sed -i 's/android.minapi = 21/android.minapi = 24/' buildozer.spec
