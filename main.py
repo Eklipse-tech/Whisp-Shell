@@ -8,7 +8,7 @@ from kivy.utils import platform
 from android.permissions import request_permissions, Permission
 
 # !!! REPLACE THIS WITH YOUR OTHER REPO'S RAW URL !!!
-UPDATE_URL = "https://raw.githubusercontent.com/YOUR_USERNAME/Whisp-Source/main/app.py"
+UPDATE_URL = "https://raw.githubusercontent.com/Eklipse-tech/Whisp-Source/refs/heads/main/app.py"
 LOCAL_FILE = "app_logic.py"
 
 class WhispShell(App):
