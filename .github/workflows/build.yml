@@ -1,22 +1,54 @@
-name: Docker Build
-on: [push]
+name: Build Whisp Shell
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Build with Buildozer Docker
-        uses: ArtemSBulgakov/buildozer-action@v1
-        id: buildozer
+      # 1. SETUP JAVA 17 (Required for Android)
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
         with:
-          command: buildozer android debug
-          buildozer_version: stable
+          java-version: '17'
+          distribution: 'temurin'
+
+      # 2. INSTALL SYSTEM DEPENDENCIES
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            python3-pip build-essential git python3 python3-dev \
+            ffmpeg libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
+            libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev zlib1g-dev \
+            libsqlite3-dev sqlite3 libbz2-dev libssl-dev openssl \
+            libgdbm-dev libgdbm-compat-dev liblzma-dev libreadline-dev \
+            libncursesw5-dev libffi-dev uuid-dev libtool libtool-bin automake autoconf
+
+      # 3. INSTALL BUILDOZER
+      - name: Install Buildozer
+        run: |
+          pip3 install --upgrade pip
+          pip3 install buildozer cython==0.29.36
+
+      # 4. RUN BUILD (NO 'yes' PIPE)
+      # We rely on 'android.accept_sdk_license = True' in your spec file.
+      # If this fails, we will finally see the REAL error message.
+      - name: Build APK
+        env:
+          JAVA_HOME: ${{ steps.setup-java.outputs.path }}
+        run: |
+          buildozer android debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
+        if: success()
         with:
           name: WhispShell
           path: bin/*.apk
