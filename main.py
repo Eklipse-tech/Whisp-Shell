@@ -7,7 +7,7 @@ from kivy.clock import Clock
 from kivy.utils import platform
 from android.permissions import request_permissions, Permission
 
-# !!! REPLACE THIS WITH YOUR OTHER REPO'S RAW URL !!!
+# !!! MAKE SURE THIS LINK IS CORRECT !!!
 UPDATE_URL = "https://raw.githubusercontent.com/Eklipse-tech/Whisp-Source/refs/heads/main/app.py"
 LOCAL_FILE = "app_logic.py"
 
@@ -20,21 +20,23 @@ class WhispShell(App):
 
     def on_start(self):
         if platform == 'android':
+            # We removed STORAGE permissions because they cause bugs on Android 11+
+            # Your app folder is private and safe to write to without them.
             perms = [
-                Permission.INTERNET, Permission.CAMERA, Permission.RECORD_AUDIO,
-                Permission.WRITE_EXTERNAL_STORAGE, Permission.READ_EXTERNAL_STORAGE,
-                Permission.ACCESS_FINE_LOCATION, Permission.READ_CONTACTS
+                Permission.CAMERA, 
+                Permission.RECORD_AUDIO,
+                Permission.ACCESS_FINE_LOCATION, 
+                Permission.READ_CONTACTS
             ]
             request_permissions(perms, self.perm_callback)
         else:
             self.update_app(0)
 
     def perm_callback(self, permissions, grants):
-        if all(grants):
-            self.label.text = "Permissions Granted.\nConnecting..."
-            Clock.schedule_once(self.update_app, 1)
-        else:
-            self.label.text = "Error: Permissions Denied."
+        # We don't care if permissions are denied. We try to launch anyway.
+        # The 'Shell' shouldn't be the police. 
+        self.label.text = "Permissions Checked.\nConnecting..."
+        Clock.schedule_once(self.update_app, 1)
 
     def update_app(self, dt):
         storage = self.user_data_dir if platform == 'android' else os.getcwd()
@@ -56,6 +58,8 @@ class WhispShell(App):
             try:
                 with open(file_path, "r") as f:
                     code = f.read()
+                # Wipe the loader UI before running the new app
+                self.layout.clear_widgets()
                 exec(code, globals(), {'app_instance': self})
             except Exception as e:
                 self.label.text = f"CRASH: {e}"
