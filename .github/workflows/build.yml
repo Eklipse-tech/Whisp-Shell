@@ -1,0 +1,58 @@
+name: Build Whisp Shell
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Free Disk Space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            python3-pip build-essential git python3 python3-dev \
+            ffmpeg libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
+            libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev zlib1g-dev \
+            libsqlite3-dev sqlite3 libbz2-dev libssl-dev openssl \
+            libgdbm-dev libgdbm-compat-dev liblzma-dev libreadline-dev \
+            libncursesw5-dev libffi-dev uuid-dev libtool automake autoconf openjdk-17-jdk
+
+      - name: Install Buildozer
+        run: |
+          pip3 install --upgrade pip
+          pip3 install buildozer cython==0.29.36
+
+      - name: Initialize Buildozer (If missing)
+        run: |
+          if [ ! -f buildozer.spec ]; then
+            buildozer init
+            sed -i 's/requirements = python3,kivy/requirements = python3,kivy,requests,urllib3,charset-normalizer,idna,certifi,openssl/' buildozer.spec
+            sed -i 's/#android.permissions = INTERNET/android.permissions = INTERNET,ACCESS_NETWORK_STATE,VIBRATE,WAKE_LOCK,READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE,MANAGE_EXTERNAL_STORAGE,CAMERA,RECORD_AUDIO,MODIFY_AUDIO_SETTINGS,ACCESS_COARSE_LOCATION,ACCESS_FINE_LOCATION,READ_CONTACTS/' buildozer.spec
+            sed -i 's/#android.uses_cleartext_traffic = 1/android.uses_cleartext_traffic = 1/' buildozer.spec
+            sed -i 's/android.api = 27/android.api = 33/' buildozer.spec
+            sed -i 's/android.minapi = 21/android.minapi = 24/' buildozer.spec
+            sed -i 's/#android.accept_sdk_license = False/android.accept_sdk_license = True/' buildozer.spec
+          fi
+
+      - name: Build APK
+        run: |
+          yes | buildozer android debug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: whisp-shell-apk
+          path: bin/*.apk
